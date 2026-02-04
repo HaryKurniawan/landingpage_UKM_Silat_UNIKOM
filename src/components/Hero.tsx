@@ -19,10 +19,10 @@ export function Hero() {
                 </span>
 
                 <h1 className="font-display font-bold leading-[0.9] tracking-tight mb-6">
-                    <span className="block text-[clamp(4rem,12vw,10rem)] opacity-0 animate-fade-in-up delay-200">
+                    <span className="block text-[clamp(3.5rem,10vw,7.5rem)] opacity-0 animate-fade-in-up delay-200">
                         Pencak
                     </span>
-                    <span className="block text-[clamp(4rem,12vw,10rem)] text-transparent bg-clip-text bg-gradient-to-r from-[#fafafa] via-[#8b8b8b] to-[#4d4d4d] opacity-0 animate-fade-in-up delay-300">
+                    <span className="block text-[clamp(3.5rem,10vw,7.5rem)] text-transparent bg-clip-text bg-gradient-to-r from-[#fafafa] via-[#8b8b8b] to-[#4d4d4d] opacity-0 animate-fade-in-up delay-300">
                         Silat
                     </span>
                 </h1>

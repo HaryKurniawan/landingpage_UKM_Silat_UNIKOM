@@ -1,11 +1,39 @@
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useScrollAnimation } from '../hooks/useScrollAnimation'
-import { eventsData } from '../data/events'
+import { supabase } from '../lib/supabase'
+import type { Event as EventItem } from '../types'
 
 export function Achievements() {
     const animation = useScrollAnimation()
     const scrollRef = useRef<HTMLDivElement>(null)
+    const [eventsList, setEventsList] = useState<EventItem[]>([])
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        fetchEvents()
+    }, [])
+
+    const fetchEvents = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('events')
+                .select('id, slug, title, date, location, image_url, status, result')
+                .order('id', { ascending: false }) // Newest first
+
+            if (error) {
+                console.error('Error fetching public events:', error)
+            } else if (data) {
+                console.log('Public events fetched:', data)
+                // Cast the status to the specific union type if needed, or trust the DB constraint
+                setEventsList(data as EventItem[])
+            }
+        } catch (error) {
+            console.error('Error in public events component:', error)
+        } finally {
+            setLoading(false)
+        }
+    }
 
     const scroll = (direction: 'left' | 'right') => {
         if (scrollRef.current) {
@@ -17,6 +45,8 @@ export function Achievements() {
         }
     }
 
+    if (loading) return null;
+
     return (
         <section id="prestasi" className="py-32 bg-[#0a0a0a] relative overflow-hidden">
             {/* Top Line */}
@@ -26,7 +56,7 @@ export function Achievements() {
             <div className="max-w-5xl mx-auto px-8 mb-12">
                 <div
                     ref={animation.ref}
-                    className={`flex flex-col md:flex-row md:items-end md:justify-between gap-6 scroll-animate ${animation.isVisible ? 'animate-in' : ''}`}
+                    className={`flex flex-col md:flex-row md:items-end md:justify-between gap-6`}
                 >
                     <div>
                         <span className="inline-block text-[11px] font-medium tracking-[0.3em] uppercase text-[#6b6b6b] mb-4">
@@ -68,17 +98,17 @@ export function Achievements() {
                     className="flex gap-4 overflow-x-auto pb-8 px-8 md:px-[calc((100vw-1024px)/2+32px)] scrollbar-hide"
                     style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                 >
-                    {eventsData.map((event, index) => (
+                    {eventsList.map((event, index) => (
                         <Link
                             key={event.id}
                             to={`/event/${event.slug}`}
-                            className={`group flex-shrink-0 w-[320px] md:w-[400px] bg-[#0f0f0f] border border-[#1a1a1a] transition-all duration-500 hover:border-[#2d2d2d] overflow-hidden scroll-animate ${animation.isVisible ? 'animate-in' : ''}`}
+                            className={`group flex-shrink-0 w-[320px] md:w-[400px] bg-[#0f0f0f] border border-[#1a1a1a] transition-all duration-500 hover:border-[#2d2d2d] overflow-hidden`}
                             style={{ transitionDelay: `${index * 0.1}s` }}
                         >
                             {/* Image */}
                             <div className="relative h-48 overflow-hidden">
                                 <img
-                                    src={event.image}
+                                    src={event.image_url}
                                     alt={event.title}
                                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0"
                                 />
@@ -86,8 +116,8 @@ export function Achievements() {
 
                                 {/* Status Badge */}
                                 <div className={`absolute top-4 left-4 px-3 py-1 text-[10px] font-medium tracking-[0.1em] uppercase ${event.status === 'upcoming'
-                                        ? 'bg-white text-[#0a0a0a]'
-                                        : 'bg-[#0a0a0a]/80 text-[#ababab]'
+                                    ? 'bg-white text-[#0a0a0a]'
+                                    : 'bg-[#0a0a0a]/80 text-[#ababab]'
                                     }`}>
                                     {event.status === 'upcoming' ? 'Akan Datang' : 'Selesai'}
                                 </div>

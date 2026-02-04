@@ -1,11 +1,37 @@
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useScrollAnimation } from '../hooks/useScrollAnimation'
-import { aktivitasData } from '../data/aktivitas'
+import { supabase } from '../lib/supabase'
+import type { Aktivitas as AktivitasType } from '../types'
 
 export function Aktivitas() {
     const animation = useScrollAnimation()
     const scrollRef = useRef<HTMLDivElement>(null)
+    const [aktivitasList, setAktivitasList] = useState<AktivitasType[]>([])
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        fetchAktivitas()
+    }, [])
+
+    const fetchAktivitas = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('aktivitas')
+                .select('id, slug, title, subtitle, image_url')
+                .order('id', { ascending: true })
+
+            if (error) {
+                console.error('Error fetching aktivitas:', error)
+            } else if (data) {
+                setAktivitasList(data as AktivitasType[])
+            }
+        } catch (error) {
+            console.error('Error:', error)
+        } finally {
+            setLoading(false)
+        }
+    }
 
     const scroll = (direction: 'left' | 'right') => {
         if (scrollRef.current) {
@@ -17,6 +43,8 @@ export function Aktivitas() {
         }
     }
 
+    if (loading) return null;
+
     return (
         <section id="aktivitas" className="py-32 bg-[#0a0a0a] relative overflow-hidden">
             {/* Top Line */}
@@ -26,7 +54,7 @@ export function Aktivitas() {
                 {/* Header */}
                 <div
                     ref={animation.ref}
-                    className={`flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12 scroll-animate ${animation.isVisible ? 'animate-in' : ''}`}
+                    className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12"
                 >
                     <div>
                         <span className="inline-block text-[11px] font-medium tracking-[0.3em] uppercase text-[#6b6b6b] mb-4">
@@ -70,18 +98,18 @@ export function Aktivitas() {
                     className="flex gap-4 overflow-x-auto pb-8 px-8 md:px-[calc((100vw-1024px)/2+32px)] scrollbar-hide"
                     style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                 >
-                    {aktivitasData.map((activity, index) => (
+                    {aktivitasList.map((activity, index) => (
                         <Link
                             key={activity.id}
                             to={`/aktivitas/${activity.slug}`}
-                            className={`group flex-shrink-0 w-[300px] md:w-[320px] bg-[#0f0f0f] border border-[#1a1a1a] transition-all duration-500 hover:border-[#2d2d2d] overflow-hidden scroll-animate ${animation.isVisible ? 'animate-in' : ''}`}
+                            className="group flex-shrink-0 w-[300px] md:w-[320px] bg-[#0f0f0f] border border-[#1a1a1a] transition-all duration-500 hover:border-[#2d2d2d] overflow-hidden"
                             style={{ transitionDelay: `${index * 0.1}s` }}
                         >
                             {/* Image with polaroid style */}
                             <div className="p-3 pb-0">
                                 <div className="relative aspect-[4/3] overflow-hidden">
                                     <img
-                                        src={activity.image}
+                                        src={activity.image_url}
                                         alt={activity.title}
                                         className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105"
                                     />

@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { getEventBySlug, eventsData } from '../data/events'
+import { supabase } from '../lib/supabase'
 import { IconInstagram } from '../components/Icons'
+import type { Event } from '../types'
 
 function getMedalEmoji(medal: string) {
     switch (medal) {
@@ -23,12 +25,55 @@ function getMedalLabel(medal: string) {
 export function EventDetailPage() {
     const { slug } = useParams<{ slug: string }>()
     const navigate = useNavigate()
-    const event = slug ? getEventBySlug(slug) : undefined
+    const [event, setEvent] = useState<Event | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [prevEvent, setPrevEvent] = useState<Partial<Event> | null>(null)
+    const [nextEvent, setNextEvent] = useState<Partial<Event> | null>(null)
 
-    // Get current event index for navigation
-    const currentIndex = eventsData.findIndex(e => e.slug === slug)
-    const prevEvent = currentIndex > 0 ? eventsData[currentIndex - 1] : null
-    const nextEvent = currentIndex < eventsData.length - 1 ? eventsData[currentIndex + 1] : null
+    useEffect(() => {
+        if (slug) fetchEvent(slug)
+    }, [slug])
+
+    const fetchEvent = async (currentSlug: string) => {
+        setLoading(true)
+        try {
+            // Fetch current event
+            const { data, error } = await supabase
+                .from('events')
+                .select('*')
+                .eq('slug', currentSlug)
+                .single()
+
+            if (error) throw error
+            if (data) {
+                setEvent(data as Event)
+
+                // Fetch adjacent events for navigation (naive approach by ID)
+                const { data: allEvents } = await supabase
+                    .from('events')
+                    .select('slug, title, id')
+                    .order('id', { ascending: false })
+
+                if (allEvents) {
+                    const currentIndex = allEvents.findIndex(e => e.slug === currentSlug)
+                    if (currentIndex > 0) setPrevEvent(allEvents[currentIndex - 1])
+                    else setPrevEvent(null)
+
+                    if (currentIndex < allEvents.length - 1) setNextEvent(allEvents[currentIndex + 1])
+                    else setNextEvent(null)
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching event:', error)
+            setEvent(null)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    if (loading) {
+        return <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-[#6b6b6b]">Loading...</div>
+    }
 
     if (!event) {
         return (
@@ -76,7 +121,7 @@ export function EventDetailPage() {
                             </Link>
                         )}
                         <span className="text-xs text-[#4d4d4d] px-2">
-                            {currentIndex + 1} / {eventsData.length}
+                            •
                         </span>
                         {nextEvent && (
                             <Link
@@ -96,7 +141,7 @@ export function EventDetailPage() {
             {/* Hero Image */}
             <div className="relative h-[60vh] md:h-[70vh] overflow-hidden">
                 <img
-                    src={event.image}
+                    src={event.image_url}
                     alt={event.title}
                     className="w-full h-full object-cover"
                 />
@@ -141,15 +186,13 @@ export function EventDetailPage() {
 
             {/* Content */}
             <div className="max-w-4xl mx-auto px-6 md:px-8 py-16 md:py-20">
-
-
                 {/* Description */}
                 <div className="mb-16">
                     <h2 className="flex items-center gap-3 text-xs font-medium tracking-[0.2em] uppercase text-[#6b6b6b] mb-6">
                         <span className="w-8 h-px bg-[#3d3d3d]" />
                         Tentang Event
                     </h2>
-                    <p className="text-lg md:text-xl text-[#c0c0c0] leading-relaxed">{event.description}</p>
+                    <p className="text-lg md:text-xl text-[#c0c0c0] leading-relaxed whitespace-pre-line">{event.description}</p>
                 </div>
 
                 {/* Winners */}
@@ -180,14 +223,14 @@ export function EventDetailPage() {
                 )}
 
                 {/* Photo Gallery */}
-                {event.photos && event.photos.length > 0 && (
+                {event.gallery_urls && event.gallery_urls.length > 0 && (
                     <div className="mb-16">
                         <h2 className="flex items-center gap-3 text-xs font-medium tracking-[0.2em] uppercase text-[#6b6b6b] mb-6">
                             <span className="w-8 h-px bg-[#3d3d3d]" />
                             Galeri Foto
                         </h2>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                            {event.photos.map((photo, index) => (
+                            {event.gallery_urls.map((photo, index) => (
                                 <div
                                     key={index}
                                     className={`group overflow-hidden bg-[#1a1a1a] cursor-pointer ${index === 0 ? 'col-span-2 row-span-2 aspect-[4/3]' : 'aspect-square'
@@ -205,16 +248,16 @@ export function EventDetailPage() {
                 )}
 
                 {/* Video & Links */}
-                {(event.videoUrl || event.instagramUrl) && (
+                {(event.video_url || event.instagram_url) && (
                     <div className="mb-16">
                         <h2 className="flex items-center gap-3 text-xs font-medium tracking-[0.2em] uppercase text-[#6b6b6b] mb-6">
                             <span className="w-8 h-px bg-[#3d3d3d]" />
                             Media
                         </h2>
                         <div className="flex flex-wrap gap-3">
-                            {event.videoUrl && (
+                            {event.video_url && (
                                 <a
-                                    href={event.videoUrl}
+                                    href={event.video_url}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="group inline-flex items-center gap-3 px-6 py-4 bg-[#0f0f0f] border border-[#1a1a1a] transition-all duration-300 hover:border-[#3d3d3d] hover:bg-[#111111]"
@@ -230,9 +273,9 @@ export function EventDetailPage() {
                                     </div>
                                 </a>
                             )}
-                            {event.instagramUrl && (
+                            {event.instagram_url && (
                                 <a
-                                    href={event.instagramUrl}
+                                    href={event.instagram_url}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="group inline-flex items-center gap-3 px-6 py-4 bg-[#0f0f0f] border border-[#1a1a1a] transition-all duration-300 hover:border-[#3d3d3d] hover:bg-[#111111]"

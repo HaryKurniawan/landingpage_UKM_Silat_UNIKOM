@@ -60,8 +60,8 @@ export function Features() {
                     <button
                         onClick={() => setActiveCategory('seni')}
                         className={`px-6 py-3 text-sm font-medium transition-all duration-300 ${activeCategory === 'seni'
-                                ? 'bg-white text-[#0a0a0a]'
-                                : 'bg-[#0f0f0f] border border-[#2d2d2d] text-[#6b6b6b] hover:border-white hover:text-white'
+                            ? 'bg-white text-[#0a0a0a]'
+                            : 'bg-[#0f0f0f] border border-[#2d2d2d] text-[#6b6b6b] hover:border-white hover:text-white'
                             }`}
                     >
                         Seni
@@ -69,8 +69,8 @@ export function Features() {
                     <button
                         onClick={() => setActiveCategory('tanding')}
                         className={`px-6 py-3 text-sm font-medium transition-all duration-300 ${activeCategory === 'tanding'
-                                ? 'bg-white text-[#0a0a0a]'
-                                : 'bg-[#0f0f0f] border border-[#2d2d2d] text-[#6b6b6b] hover:border-white hover:text-white'
+                            ? 'bg-white text-[#0a0a0a]'
+                            : 'bg-[#0f0f0f] border border-[#2d2d2d] text-[#6b6b6b] hover:border-white hover:text-white'
                             }`}
                     >
                         Tanding

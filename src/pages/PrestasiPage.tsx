@@ -1,19 +1,7 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-
-const allAchievements = [
-    { year: '2024', title: 'Juara 1 Kategori Tanding Putra Kelas A', event: 'Kejuaraan Nasional Pencak Silat Mahasiswa', athlete: 'Ahmad Rizky Pratama', medal: 'gold' },
-    { year: '2024', title: 'Juara 2 Kategori Tunggal Putri', event: 'POMDA Jawa Barat', athlete: 'Dewi Kartika', medal: 'silver' },
-    { year: '2024', title: 'Juara 1 Kategori Ganda Campuran', event: 'Piala Rektor se-Jawa Barat', athlete: 'Ahmad Rizky & Siti Nurhaliza', medal: 'gold' },
-    { year: '2024', title: 'Juara 2 Kategori Tunggal Putri', event: 'Kejuaraan Nasional Pencak Silat Mahasiswa', athlete: 'Siti Nurhaliza', medal: 'silver' },
-    { year: '2024', title: 'Juara 3 Kategori Tanding Putra Kelas B', event: 'Kejuaraan Nasional Pencak Silat Mahasiswa', athlete: 'Muhammad Faisal', medal: 'bronze' },
-    { year: '2023', title: 'Juara 3 Kategori Tanding Putra', event: 'Kejuaraan Nasional Antar Perguruan Tinggi', athlete: 'Budi Santoso', medal: 'bronze' },
-    { year: '2023', title: 'Juara 1 Kategori Beregu Putra', event: 'Festival Silat Nusantara', athlete: 'Tim Putra UNIKOM', medal: 'gold' },
-    { year: '2023', title: 'Juara 2 Kategori Tunggal Putra', event: 'POMDA Jawa Barat', athlete: 'Ahmad Rizky Pratama', medal: 'silver' },
-    { year: '2022', title: 'Juara 2 Kategori Tanding Putra', event: 'POMDA Jawa Barat', athlete: 'Budi Santoso', medal: 'silver' },
-    { year: '2022', title: 'Juara 1 Kategori Ganda Putra', event: 'Piala Gubernur Jabar', athlete: 'Ahmad Rizky & Muhammad Faisal', medal: 'gold' },
-    { year: '2022', title: 'Juara 3 Kategori Tunggal Putri', event: 'Festival Silat Nusantara', athlete: 'Dewi Kartika', medal: 'bronze' },
-    { year: '2021', title: 'Juara 1 Kategori Tanding Putra', event: 'Kejuaraan Antar Kampus Bandung', athlete: 'Ahmad Rizky Pratama', medal: 'gold' },
-]
+import { supabase } from '../lib/supabase'
+import type { Prestasi } from '../types'
 
 function getMedalEmoji(medal: string) {
     switch (medal) {
@@ -34,9 +22,35 @@ function getMedalLabel(medal: string) {
 }
 
 export function PrestasiPage() {
-    const goldCount = allAchievements.filter(a => a.medal === 'gold').length
-    const silverCount = allAchievements.filter(a => a.medal === 'silver').length
-    const bronzeCount = allAchievements.filter(a => a.medal === 'bronze').length
+    const [achievements, setAchievements] = useState<Prestasi[]>([])
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        fetchPrestasi()
+    }, [])
+
+    const fetchPrestasi = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('prestasi')
+                .select('*')
+                .order('id', { ascending: false })
+
+            if (error) {
+                console.error('Error fetching prestasi:', error)
+            } else if (data) {
+                setAchievements(data as Prestasi[])
+            }
+        } catch (error) {
+            console.error('Error:', error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const goldCount = achievements.filter(a => a.medal === 'gold').length
+    const silverCount = achievements.filter(a => a.medal === 'silver').length
+    const bronzeCount = achievements.filter(a => a.medal === 'bronze').length
 
     return (
         <div className="min-h-screen bg-[#0a0a0a] text-white">
@@ -54,7 +68,7 @@ export function PrestasiPage() {
                     </Link>
 
                     <div className="text-xs text-[#4d4d4d]">
-                        Total {allAchievements.length} Prestasi
+                        Total {achievements.length} Prestasi
                     </div>
                 </div>
             </header>
@@ -90,40 +104,48 @@ export function PrestasiPage() {
 
             {/* Achievement List */}
             <div className="max-w-4xl mx-auto px-6 pb-20">
-                <div className="space-y-2">
-                    {allAchievements.map((item, index) => (
-                        <div
-                            key={index}
-                            className="group flex items-center gap-4 md:gap-6 p-5 bg-[#0f0f0f] border border-[#1a1a1a] transition-all duration-300 hover:border-[#2d2d2d] hover:bg-[#111111]"
-                        >
-                            {/* Year Badge */}
-                            <div className="hidden sm:flex items-center justify-center w-14 h-14 border border-[#2d2d2d] text-xs font-medium text-[#4d4d4d] flex-shrink-0">
-                                {item.year}
-                            </div>
-
-                            {/* Medal */}
-                            <div className="text-3xl flex-shrink-0">{getMedalEmoji(item.medal)}</div>
-
-                            {/* Content */}
-                            <div className="flex-1 min-w-0">
-                                <div className="font-display text-base md:text-lg font-semibold mb-1 group-hover:text-white transition-colors">
-                                    {item.title}
+                {loading ? (
+                    <div className="text-center text-[#4d4d4d] py-12">
+                        Memuat data...
+                    </div>
+                ) : (
+                    <div className="space-y-2">
+                        {achievements.map((item) => (
+                            <div
+                                key={item.id}
+                                className="group flex items-center gap-4 md:gap-6 p-5 bg-[#0f0f0f] border border-[#1a1a1a] transition-all duration-300 hover:border-[#2d2d2d] hover:bg-[#111111]"
+                            >
+                                {/* Year Badge */}
+                                <div className="hidden sm:flex items-center justify-center w-14 h-14 border border-[#2d2d2d] text-xs font-medium text-[#4d4d4d] flex-shrink-0">
+                                    {item.year}
                                 </div>
-                                <div className="text-sm text-[#6b6b6b] mb-1">
-                                    <span className="sm:hidden">{item.year} • </span>{item.event}
-                                </div>
-                                <div className="text-xs text-[#4d4d4d]">
-                                    {item.athlete}
-                                </div>
-                            </div>
 
-                            {/* Medal Label */}
-                            <div className="hidden md:block px-3 py-1 text-[10px] font-medium tracking-[0.1em] uppercase text-[#4d4d4d] border border-[#2d2d2d]">
-                                {getMedalLabel(item.medal)}
+                                {/* Medal */}
+                                <div className="text-3xl flex-shrink-0">{getMedalEmoji(item.medal)}</div>
+
+                                {/* Content */}
+                                <div className="flex-1 min-w-0">
+                                    <div className="font-display text-base md:text-lg font-semibold mb-1 group-hover:text-white transition-colors">
+                                        {item.title}
+                                    </div>
+                                    <div className="text-sm text-[#6b6b6b] mb-1">
+                                        <span className="sm:hidden">{item.year} • </span>{item.event_name}
+                                    </div>
+                                    {item.athlete && (
+                                        <div className="text-xs text-[#4d4d4d]">
+                                            {item.athlete}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Medal Label */}
+                                <div className="hidden md:block px-3 py-1 text-[10px] font-medium tracking-[0.1em] uppercase text-[#4d4d4d] border border-[#2d2d2d]">
+                                    {getMedalLabel(item.medal)}
+                                </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* Back to Home */}

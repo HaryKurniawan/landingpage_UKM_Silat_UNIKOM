@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import { useScrollAnimation } from '../hooks/useScrollAnimation'
+import { supabase } from '../lib/supabase'
 
 const programKerja = [
     { title: 'Latihan Rutin', desc: 'Setiap Selasa & Kamis' },
@@ -11,6 +13,28 @@ const programKerja = [
 
 export function VisiMisi() {
     const animation = useScrollAnimation()
+    const [visi, setVisi] = useState('')
+    const [misi, setMisi] = useState<string[]>([])
+
+    useEffect(() => {
+        fetchVisiMisi()
+    }, [])
+
+    const fetchVisiMisi = async () => {
+        try {
+            const { data } = await supabase
+                .from('site_settings')
+                .select('visi, misi')
+                .single()
+
+            if (data) {
+                if (data.visi) setVisi(data.visi)
+                if (data.misi && Array.isArray(data.misi)) setMisi(data.misi)
+            }
+        } catch (error) {
+            console.error('Error fetching Visi Misi:', error)
+        }
+    }
 
     return (
         <section id="visi-misi" className="py-32 bg-[#0a0a0a] relative">
@@ -31,7 +55,7 @@ export function VisiMisi() {
                     <div className="mb-10">
                         <h3 className="text-xs uppercase tracking-[0.2em] text-[#4d4d4d] mb-4">Visi</h3>
                         <p className="font-display text-xl md:text-2xl font-medium text-[#c0c0c0] max-w-2xl mx-auto leading-relaxed">
-                            Menjadi UKM Pencak Silat terdepan yang menghasilkan pesilat berprestasi dan berkarakter.
+                            {visi}
                         </p>
                     </div>
 
@@ -42,10 +66,9 @@ export function VisiMisi() {
                     <div>
                         <h3 className="text-xs uppercase tracking-[0.2em] text-[#4d4d4d] mb-6">Misi</h3>
                         <div className="flex flex-wrap justify-center gap-3 max-w-2xl mx-auto">
-                            <span className="px-4 py-2 bg-[#0f0f0f] border border-[#1a1a1a] text-sm text-[#8b8b8b]">Latihan Berkualitas</span>
-                            <span className="px-4 py-2 bg-[#0f0f0f] border border-[#1a1a1a] text-sm text-[#8b8b8b]">Prestasi Nasional</span>
-                            <span className="px-4 py-2 bg-[#0f0f0f] border border-[#1a1a1a] text-sm text-[#8b8b8b]">Karakter Pesilat</span>
-                            <span className="px-4 py-2 bg-[#0f0f0f] border border-[#1a1a1a] text-sm text-[#8b8b8b]">Komunitas Solid</span>
+                            {misi.map((item, index) => (
+                                <span key={index} className="px-4 py-2 bg-[#0f0f0f] border border-[#1a1a1a] text-sm text-[#8b8b8b]">{item}</span>
+                            ))}
                         </div>
                     </div>
                 </div>
